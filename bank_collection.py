@@ -23,7 +23,7 @@ class BankCollection:
             read_extrato_sicredi = ReadExtratoSicredi(self.file, self.final_dict)
             self.final_dict = read_extrato_sicredi.read_extrato(self.bank)
 
-        elif self.bank in ["caixa unidade 1 e 2",  "caixa unidade 3"]:
+        elif self.bank in ["caixa"]:
             read_extrato_caixa = ReadExtratoCaixa(self.file, self.final_dict)
             self.final_dict = read_extrato_caixa.read_extrato(self.bank)
 

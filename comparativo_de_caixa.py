@@ -4,12 +4,14 @@ import os
 import re
 from sophias_cashflow import SophiasCashflow
 from extratos_cashflow import ExtratosCashFlow
+from generate_cash_flow import GenerateCashFlow
 
 class CashFlowComparative:
     def __init__(self) -> None:
         self.final_dict = {}
         self.sophias_cashflow = SophiasCashflow()
         self.extratos_cashflow = ExtratosCashFlow()
+        self.generate_cashflow = GenerateCashFlow() 
 
         self.main()
 
@@ -19,6 +21,8 @@ class CashFlowComparative:
         self.extratos_cashflow.main(self.final_dict)
 
         self.__compare_sophia_and_extratos()
+        self.generate_cashflow.main()      
+
     
     def __compare_sophia_and_extratos(self):
         data = self.final_dict  
