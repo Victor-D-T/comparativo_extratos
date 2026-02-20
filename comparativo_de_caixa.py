@@ -33,7 +33,9 @@ class CashFlowComparative:
 
     
     def __compare_sophia_and_extratos(self):
-        data = self.final_dict  
+        data = self.final_dict
+        if not data:
+            raise Exception("Nenhum extrato bancário foi lido. Verifique se a pasta Extratos/ contém os arquivos corretos.")
         final_df = pd.DataFrame()
 
         for bank, bank_data in data.items():
