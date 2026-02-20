@@ -95,12 +95,16 @@ class SophiasCashflow:
             complete_file_path = os.path.join(self.sophia_folder_path, f)
             files.append(complete_file_path)
 
-        for file in files:            
+        for file in files:
             if not file.lower().endswith(('.xls')):
                 continue
-            
+
             else:
-                self.final_dict = self.extract_sophias_transactions_data(file)      
+                arquivo = os.path.basename(file)
+                try:
+                    self.final_dict = self.extract_sophias_transactions_data(file)
+                except Exception as e:
+                    raise Exception(f"Erro ao ler arquivo do Sophia '{arquivo}': {e}") from e
 
         return self.final_dict
 

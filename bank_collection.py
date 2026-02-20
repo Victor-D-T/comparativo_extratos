@@ -1,3 +1,4 @@
+import os
 from read_extrato_cora import ReadExtratoCora
 from read_extrato_itau import ReadExtratoItau
 from read_extrato_sicredi import ReadExtratoSicredi
@@ -11,24 +12,29 @@ class BankCollection:
         self.final_dict = final_dict
 
     def main(self):
-        if self.bank in ["cora unidade 3", "cora unidade 1 e 2"]:
-            read_extrato_cora = ReadExtratoCora(self.file, self.final_dict)
-            self.final_dict = read_extrato_cora.read_extrato(self.bank)
+        arquivo = os.path.basename(self.file)
+        try:
+            if self.bank in ["cora unidade 3", "cora unidade 1 e 2"]:
+                read_extrato_cora = ReadExtratoCora(self.file, self.final_dict)
+                self.final_dict = read_extrato_cora.read_extrato(self.bank)
 
-        elif self.bank in ["itau unidade 1 e 2",  "itau unidade 3"]:
-            read_extrato_itau = ReadExtratoItau(self.file, self.final_dict)
-            self.final_dict = read_extrato_itau.read_extrato(self.bank)
+            elif self.bank in ["itau unidade 1 e 2",  "itau unidade 3"]:
+                read_extrato_itau = ReadExtratoItau(self.file, self.final_dict)
+                self.final_dict = read_extrato_itau.read_extrato(self.bank)
 
-        elif self.bank in ["sicredi unidade 1 e 2",  "sicredi unidade 3"]:
-            read_extrato_sicredi = ReadExtratoSicredi(self.file, self.final_dict)
-            self.final_dict = read_extrato_sicredi.read_extrato(self.bank)
+            elif self.bank in ["sicredi unidade 1 e 2",  "sicredi unidade 3"]:
+                read_extrato_sicredi = ReadExtratoSicredi(self.file, self.final_dict)
+                self.final_dict = read_extrato_sicredi.read_extrato(self.bank)
 
-        elif self.bank in ["caixa"]:
-            read_extrato_caixa = ReadExtratoCaixa(self.file, self.final_dict)
-            self.final_dict = read_extrato_caixa.read_extrato(self.bank)
+            elif self.bank in ["caixa"]:
+                read_extrato_caixa = ReadExtratoCaixa(self.file, self.final_dict)
+                self.final_dict = read_extrato_caixa.read_extrato(self.bank)
 
-        else:
-            raise Exception("no file")
-        
+            else:
+                raise Exception("no file")
+
+        except Exception as e:
+            raise Exception(f"Erro ao ler extrato '{arquivo}': {e}") from e
+
         return self.final_dict
         

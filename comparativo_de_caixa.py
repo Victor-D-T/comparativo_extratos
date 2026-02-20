@@ -129,5 +129,47 @@ class CashFlowComparative:
                     worksheet.set_column(col_num, col_num, max_length + 2)  # Add a little padding
         
 
-cash_flow = CashFlowComparative()
-cash_flow.main()
+try:
+    cash_flow = CashFlowComparative()
+    print("\nProcessamento concluído com sucesso!")
+    print("Os arquivos 'comparativo_de_caixa.xlsx' e 'fluxo_de_caixa.xlsx' foram gerados.")
+    input("\nPressione Enter para sair...")
+except Exception as e:
+    import traceback
+
+    log_path = os.path.join(os.getcwd(), "erro_log.txt")
+    with open(log_path, "w", encoding="utf-8") as f:
+        traceback.print_exc(file=f)
+
+    err = str(e)
+    err_lower = err.lower()
+    err_type = type(e).__name__
+
+    print("\n" + "=" * 55)
+    print("  ERRO — O programa encontrou um problema")
+    print("=" * 55)
+
+    if "permissionerror" in err_type.lower() or "permission denied" in err_lower:
+        print("\nO arquivo está aberto em outro programa (ex: Excel).")
+        print("Feche o arquivo e execute o programa novamente.")
+    elif "filenotfounderror" in err_type.lower() or "no such file" in err_lower:
+        print("\nArquivo não encontrado.")
+        print("Verifique se todos os arquivos estão nas pastas 'Extratos/' e 'Sophia/'.")
+    elif "no sheet named" in err_lower or "worksheet" in err_lower:
+        print(f"\nAba da planilha não encontrada.")
+        print(f"Detalhe: {err}")
+        print("Verifique se o arquivo foi exportado corretamente pelo banco.")
+    elif "engine" in err_lower or "format cannot be determined" in err_lower:
+        print(f"\nFormato de arquivo não reconhecido.")
+        print(f"Detalhe: {err}")
+        print("O arquivo pode estar corrompido. Tente exportá-lo novamente.")
+    elif "keyerror" in err_type.lower():
+        print(f"\nColuna não encontrada na planilha: {err}")
+        print("Verifique se o arquivo foi exportado no formato correto.")
+    else:
+        print(f"\n{err}")
+
+    print(f"\nUm relatório técnico foi salvo em: erro_log.txt")
+    print("Encaminhe esse arquivo ao suporte se necessário.")
+    print("=" * 55)
+    input("\nPressione Enter para sair...")
