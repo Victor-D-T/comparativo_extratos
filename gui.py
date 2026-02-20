@@ -40,6 +40,8 @@ class App(tk.Tk):
 
         self._build_ui()
         self.protocol("WM_DELETE_WINDOW", self.destroy)
+        self.after(100, self._poll_queue)
+        self.after(400, lambda: threading.Thread(target=self._run_update_check, daemon=True).start())
 
     def _build_ui(self):
         # Cabeçalho azul
@@ -122,24 +124,11 @@ class App(tk.Tk):
 
     # ──────────────────────── processamento ────────────────────────
 
-    def _on_process(self):
-        self.btn.config(state="disabled")
-        self.log.config(state="normal")
-        self.log.delete("1.0", "end")
-        self.log.config(state="disabled")
-        self._set_progress(0, "Iniciando...", "#333")
-        threading.Thread(target=self._run, daemon=True).start()
-        self.after(100, self._poll_queue)
-
-    def _run(self):
-        old_stdout = sys.stdout
-        sys.stdout = _QueueStream(self.q)
+    def _run_update_check(self):
         try:
-            from comparativo_de_caixa import CashFlowComparative, VERSION
+            from comparativo_de_caixa import VERSION
             from updater import check_for_update, download_and_apply
-
-            # Verificar atualização
-            self.q.put(("progress", (5, "Verificando atualizações...", "#333")))
+            self.q.put(("log", "Verificando atualizações..."))
             update_info = check_for_update(VERSION)
             if update_info:
                 self.q.put(("update_prompt", update_info))
@@ -147,11 +136,25 @@ class App(tk.Tk):
                 self._update_event.clear()
                 if self._update_choice:
                     tag, url = update_info
-                    self.q.put(("progress", (8, f"Baixando v{tag}...", "#333")))
+                    self.q.put(("log", f"Baixando v{tag}..."))
                     download_and_apply(url, tag)
-                    return
+        except Exception:
+            pass
 
-            # Processar
+    def _on_process(self):
+        self.btn.config(state="disabled")
+        self.log.config(state="normal")
+        self.log.delete("1.0", "end")
+        self.log.config(state="disabled")
+        self._set_progress(0, "Iniciando...", "#333")
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def _run(self):
+        old_stdout = sys.stdout
+        sys.stdout = _QueueStream(self.q)
+        try:
+            from comparativo_de_caixa import CashFlowComparative
+
             def progress_cb(pct, msg):
                 self.q.put(("progress", (pct, msg, "#333")))
 
@@ -188,11 +191,9 @@ class App(tk.Tk):
 
                 elif kind == "done":
                     self._on_done()
-                    return
 
                 elif kind == "error":
                     self._on_error(*data)
-                    return
 
         except queue.Empty:
             pass
