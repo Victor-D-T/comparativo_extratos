@@ -1,0 +1,1 @@
+Jamais faça commits e pushs sem o usuário pedir
