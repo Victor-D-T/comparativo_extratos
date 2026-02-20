@@ -25,7 +25,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='comparativo_de_caixa_v1.2.0',
+    name='comparativo_de_caixa_v1.2.1',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
