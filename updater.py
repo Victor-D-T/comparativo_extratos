@@ -4,6 +4,7 @@ import json
 import ssl
 import subprocess
 import urllib.request
+import urllib.error
 import certifi
 
 
@@ -23,8 +24,13 @@ def check_for_update(current_version):
 
     ctx = ssl.create_default_context(cafile=certifi.where())
     req = urllib.request.Request(API_URL, headers={"User-Agent": "comparativo-extratos"})
-    with urllib.request.urlopen(req, timeout=8, context=ctx) as response:
-        data = json.loads(response.read())
+    try:
+        with urllib.request.urlopen(req, timeout=8, context=ctx) as response:
+            data = json.loads(response.read())
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            raise Exception("Nenhum release estável encontrado no GitHub (404). O release pode estar marcado como 'pre-release'.")
+        raise Exception(f"Erro na API do GitHub: HTTP {e.code}")
 
     latest_tag = data.get("tag_name", "")
     if not latest_tag:
@@ -52,9 +58,12 @@ def download_and_apply(download_url, tag):
 
     ctx = ssl.create_default_context(cafile=certifi.where())
     req = urllib.request.Request(download_url, headers={"User-Agent": "comparativo-extratos"})
-    with urllib.request.urlopen(req, context=ctx) as response:
-        with open(new_exe_path, "wb") as f:
-            f.write(response.read())
+    try:
+        with urllib.request.urlopen(req, context=ctx) as response:
+            with open(new_exe_path, "wb") as f:
+                f.write(response.read())
+    except urllib.error.HTTPError as e:
+        raise Exception(f"Erro ao baixar executável: HTTP {e.code}\nURL: {download_url}")
 
     bat_content = (
         "@echo off\n"
