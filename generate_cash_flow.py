@@ -33,7 +33,7 @@ class GenerateCashFlow:
         self.result = pd.concat([self.pagas, self.recebidas], ignore_index=True).reset_index(drop=True)
         self.result = self.result.sort_values("Conta")
         with pd.ExcelWriter(os.path.join(os.getcwd(), "fluxo_de_caixa.xlsx"), engine = "xlsxwriter" ) as writer:
-            self.result.to_excel(writer, "fluxo de caixa", index=False )
+            self.result.to_excel(writer, sheet_name="fluxo de caixa", index=False)
 
     def sophias_cash_flow(self):
         files = []
