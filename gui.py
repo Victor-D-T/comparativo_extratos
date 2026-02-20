@@ -29,7 +29,7 @@ class App(tk.Tk):
         from comparativo_de_caixa import VERSION
         self.version = VERSION
 
-        self.title(f"Comparativo de Extratos v{VERSION}")
+        self.title(f"Comparativo de Extratos - v{VERSION}")
         self.resizable(False, False)
         self.geometry("500x440")
         self.configure(bg="#f0f0f0")
