@@ -36,6 +36,7 @@ jobs:
         run: pyinstaller comparativo_de_caixa.spec
 
       - name: Upload do EXE no Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/comparativo_de_caixa_v${{ steps.version.outputs.VERSION }}.exe
+        run: |
+          gh release upload ${{ github.event.release.tag_name }} dist/comparativo_de_caixa_v${{ steps.version.outputs.VERSION }}.exe --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
