@@ -18,6 +18,8 @@ class ExtratosCashFlow:
         self.files = []
 
         for f in os.listdir(self.folder_path):
+            if f.startswith('~$'):
+                continue
             complete_file_path = os.path.join(self.folder_path, f)
             self.files.append(complete_file_path)
         
