@@ -50,7 +50,11 @@ def download_and_apply(download_url, tag):
     current_exe = sys.executable
     new_exe_path = current_exe + ".new"
 
-    urllib.request.urlretrieve(download_url, new_exe_path)
+    ctx = ssl.create_default_context(cafile=certifi.where())
+    req = urllib.request.Request(download_url, headers={"User-Agent": "comparativo-extratos"})
+    with urllib.request.urlopen(req, context=ctx) as response:
+        with open(new_exe_path, "wb") as f:
+            f.write(response.read())
 
     bat_content = (
         "@echo off\n"
