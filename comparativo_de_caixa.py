@@ -1,4 +1,4 @@
-VERSION = "1.2.4"
+VERSION = "1.2.5"
 
 from openpyxl import Workbook
 import pandas as pd
