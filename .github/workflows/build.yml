@@ -30,6 +30,7 @@ jobs:
           $version = $tag.TrimStart('v')
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
           (Get-Content comparativo_de_caixa.spec) -replace "name='comparativo_de_caixa_v[\d.]+'", "name='comparativo_de_caixa_v$version'" | Set-Content comparativo_de_caixa.spec
+          (Get-Content comparativo_de_caixa.py) -replace 'VERSION = "[\d.]+"', "VERSION = `"$version`"" | Set-Content comparativo_de_caixa.py
         shell: pwsh
 
       - name: Buildar executável
