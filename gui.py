@@ -138,6 +138,8 @@ class App(tk.Tk):
                     tag, url = update_info
                     self.q.put(("log", f"Baixando v{tag}..."))
                     download_and_apply(url, tag)
+            else:
+                self.q.put(("log", "Nenhuma atualização disponível."))
         except Exception:
             pass
 
