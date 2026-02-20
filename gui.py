@@ -125,10 +125,10 @@ class App(tk.Tk):
     # ──────────────────────── processamento ────────────────────────
 
     def _run_update_check(self):
+        from comparativo_de_caixa import VERSION
+        from updater import check_for_update, download_and_apply
+        self.q.put(("log", "Verificando atualizações..."))
         try:
-            from comparativo_de_caixa import VERSION
-            from updater import check_for_update, download_and_apply
-            self.q.put(("log", "Verificando atualizações..."))
             update_info = check_for_update(VERSION)
             if update_info:
                 self.q.put(("update_prompt", update_info))
@@ -139,9 +139,9 @@ class App(tk.Tk):
                     self.q.put(("log", f"Baixando v{tag}..."))
                     download_and_apply(url, tag)
             else:
-                self.q.put(("log", "Nenhuma atualização disponível."))
-        except Exception:
-            pass
+                self.q.put(("log", "Versão atualizada."))
+        except Exception as e:
+            self.q.put(("log", f"Aviso: {e}"))
 
     def _on_process(self):
         self.btn.config(state="disabled")

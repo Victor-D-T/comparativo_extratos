@@ -14,34 +14,32 @@ def _parse_version(v):
 
 
 def check_for_update(current_version):
-    """Verifica se há versão nova. Retorna (tag, download_url) ou None."""
+    """Verifica se há versão nova. Retorna (tag, download_url) ou None se já atualizado.
+    Lança Exception com mensagem clara em caso de problema."""
     if not getattr(sys, 'frozen', False):
         return None
-    try:
-        req = urllib.request.Request(API_URL, headers={"User-Agent": "comparativo-extratos"})
-        with urllib.request.urlopen(req, timeout=8) as response:
-            data = json.loads(response.read())
 
-        latest_tag = data.get("tag_name", "")
-        if not latest_tag:
-            return None
+    req = urllib.request.Request(API_URL, headers={"User-Agent": "comparativo-extratos"})
+    with urllib.request.urlopen(req, timeout=8) as response:
+        data = json.loads(response.read())
 
-        latest = _parse_version(latest_tag)
-        current = _parse_version(current_version)
-        if latest <= current:
-            return None
+    latest_tag = data.get("tag_name", "")
+    if not latest_tag:
+        raise Exception("GitHub não retornou nenhuma versão de release.")
 
-        exe_asset = next(
-            (a for a in data.get("assets", []) if a["name"].endswith(".exe")),
-            None
-        )
-        if exe_asset is None:
-            return None
+    latest = _parse_version(latest_tag)
+    current = _parse_version(current_version)
+    if latest <= current:
+        return None  # já na versão mais recente
 
-        return latest_tag, exe_asset["browser_download_url"]
+    exe_asset = next(
+        (a for a in data.get("assets", []) if a["name"].endswith(".exe")),
+        None
+    )
+    if exe_asset is None:
+        raise Exception(f"Versão {latest_tag} disponível, mas o executável ainda não foi gerado. Tente novamente em alguns minutos.")
 
-    except Exception:
-        return None
+    return latest_tag, exe_asset["browser_download_url"]
 
 
 def download_and_apply(download_url, tag):
