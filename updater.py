@@ -1,8 +1,10 @@
 import sys
 import os
 import json
+import ssl
 import subprocess
 import urllib.request
+import certifi
 
 
 GITHUB_REPO = "Victor-D-T/comparativo_extratos"
@@ -19,8 +21,9 @@ def check_for_update(current_version):
     if not getattr(sys, 'frozen', False):
         return None
 
+    ctx = ssl.create_default_context(cafile=certifi.where())
     req = urllib.request.Request(API_URL, headers={"User-Agent": "comparativo-extratos"})
-    with urllib.request.urlopen(req, timeout=8) as response:
+    with urllib.request.urlopen(req, timeout=8, context=ctx) as response:
         data = json.loads(response.read())
 
     latest_tag = data.get("tag_name", "")

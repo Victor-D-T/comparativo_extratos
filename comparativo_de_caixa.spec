@@ -9,7 +9,7 @@ a = Analysis(
     hiddenimports=['updater', 'comparativo_de_caixa', 'sophias_cashflow',
                    'extratos_cashflow', 'generate_cash_flow', 'bank_collection',
                    'read_extrato_cora', 'read_extrato_itau',
-                   'read_extrato_sicredi', 'read_extrato_caixa'],
+                   'read_extrato_sicredi', 'read_extrato_caixa', 'certifi'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
