@@ -6,7 +6,8 @@ class ReadExtratoCaixa:
         self.final_dict = final_dict
 
     def read_extrato(self, bank):
-        df = pd.read_excel(self.file, skiprows=1)
+        engine = 'openpyxl' if self.file.lower().endswith('.xlsx') else 'xlrd'
+        df = pd.read_excel(self.file, skiprows=1, engine=engine)
         df["Data Lançamento"] = pd.to_datetime(df["Data Lançamento"], dayfirst=True)
         df["Data Lançamento"] = df["Data Lançamento"].dt.strftime('%Y-%m-%d')
         recebidas = df[df["Valor Lançamento"]>0]

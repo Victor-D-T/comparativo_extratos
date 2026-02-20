@@ -6,7 +6,8 @@ class ReadExtratoItau:
         self.final_dict = final_dict
 
     def read_extrato(self, bank):
-        df = pd.read_excel(self.file, sheet_name="Lançamentos", skiprows=9, usecols="A:E", engine='xlrd')
+        engine = 'openpyxl' if self.file.lower().endswith('.xlsx') else 'xlrd'
+        df = pd.read_excel(self.file, sheet_name="Lançamentos", skiprows=9, usecols="A:E", engine=engine)
         df.columns = df.columns.str.lower()
         df["data"] = pd.to_datetime(df["data"], dayfirst=True)
         df["data"] = df["data"].dt.strftime('%Y-%m-%d')

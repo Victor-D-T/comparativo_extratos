@@ -6,7 +6,8 @@ class ReadExtratoSicredi:
         self.final_dict = final_dict
 
     def read_extrato(self, bank):
-        df = pd.read_excel(self.file, sheet_name="Extrato", skiprows=8, usecols="A:E")
+        engine = 'openpyxl' if self.file.lower().endswith('.xlsx') else 'xlrd'
+        df = pd.read_excel(self.file, sheet_name="Extrato", skiprows=8, usecols="A:E", engine=engine)
         df = df.dropna()
 
         df["Data"] = pd.to_datetime(df["Data"], dayfirst=True)

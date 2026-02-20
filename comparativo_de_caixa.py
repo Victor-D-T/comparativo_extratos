@@ -1,3 +1,5 @@
+VERSION = "1.1.0"
+
 from openpyxl import Workbook
 import pandas as pd
 import os
@@ -7,21 +9,27 @@ from extratos_cashflow import ExtratosCashFlow
 from generate_cash_flow import GenerateCashFlow
 
 class CashFlowComparative:
-    def __init__(self) -> None:
+    def __init__(self, progress_callback=None) -> None:
         self.final_dict = {}
         self.sophias_cashflow = SophiasCashflow()
         self.extratos_cashflow = ExtratosCashFlow()
-        self.generate_cashflow = GenerateCashFlow() 
+        self.generate_cashflow = GenerateCashFlow()
+        self._progress = progress_callback or (lambda pct, msg: None)
 
         self.main()
 
     def main(self):
-    
+        self._progress(15, "Lendo arquivos Sophia...")
         self.sophias_cashflow.main(self.final_dict)
+
+        self._progress(45, "Lendo extratos bancários...")
         self.extratos_cashflow.main(self.final_dict)
 
+        self._progress(72, "Gerando comparativo de caixa...")
         self.__compare_sophia_and_extratos()
-        self.generate_cashflow.main()      
+
+        self._progress(90, "Gerando fluxo de caixa...")
+        self.generate_cashflow.main()
 
     
     def __compare_sophia_and_extratos(self):
@@ -129,47 +137,7 @@ class CashFlowComparative:
                     worksheet.set_column(col_num, col_num, max_length + 2)  # Add a little padding
         
 
-try:
-    cash_flow = CashFlowComparative()
-    print("\nProcessamento concluído com sucesso!")
-    print("Os arquivos 'comparativo_de_caixa.xlsx' e 'fluxo_de_caixa.xlsx' foram gerados.")
-    input("\nPressione Enter para sair...")
-except Exception as e:
-    import traceback
-
-    log_path = os.path.join(os.getcwd(), "erro_log.txt")
-    with open(log_path, "w", encoding="utf-8") as f:
-        traceback.print_exc(file=f)
-
-    err = str(e)
-    err_lower = err.lower()
-    err_type = type(e).__name__
-
-    print("\n" + "=" * 55)
-    print("  ERRO — O programa encontrou um problema")
-    print("=" * 55)
-
-    if "permissionerror" in err_type.lower() or "permission denied" in err_lower:
-        print("\nO arquivo está aberto em outro programa (ex: Excel).")
-        print("Feche o arquivo e execute o programa novamente.")
-    elif "filenotfounderror" in err_type.lower() or "no such file" in err_lower:
-        print("\nArquivo não encontrado.")
-        print("Verifique se todos os arquivos estão nas pastas 'Extratos/' e 'Sophia/'.")
-    elif "no sheet named" in err_lower or "worksheet" in err_lower:
-        print(f"\nAba da planilha não encontrada.")
-        print(f"Detalhe: {err}")
-        print("Verifique se o arquivo foi exportado corretamente pelo banco.")
-    elif "engine" in err_lower or "format cannot be determined" in err_lower:
-        print(f"\nFormato de arquivo não reconhecido.")
-        print(f"Detalhe: {err}")
-        print("O arquivo pode estar corrompido. Tente exportá-lo novamente.")
-    elif "keyerror" in err_type.lower():
-        print(f"\nColuna não encontrada na planilha: {err}")
-        print("Verifique se o arquivo foi exportado no formato correto.")
-    else:
-        print(f"\n{err}")
-
-    print(f"\nUm relatório técnico foi salvo em: erro_log.txt")
-    print("Encaminhe esse arquivo ao suporte se necessário.")
-    print("=" * 55)
-    input("\nPressione Enter para sair...")
+if __name__ == "__main__":
+    from gui import App
+    app = App()
+    app.mainloop()

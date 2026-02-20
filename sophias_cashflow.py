@@ -23,7 +23,8 @@ class SophiasCashflow:
         return self.final_dict        
 
     def extract_sophias_transactions_data(self, file):  
-        df = pd.read_excel(file, engine='xlrd')
+        engine = 'openpyxl' if file.lower().endswith('.xlsx') else 'xlrd'
+        df = pd.read_excel(file, engine=engine)
         if df.get("DATA_EFETIVA") is not None:
             df["DATA_EFETIVA"] = pd.to_datetime(df["DATA_EFETIVA"])
             df["DATA_EFETIVA"] = df["DATA_EFETIVA"].dt.strftime('%Y-%m-%d')
