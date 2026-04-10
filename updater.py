@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import ssl
+import base64
 import subprocess
 import urllib.request
 import urllib.error
@@ -65,16 +66,22 @@ def download_and_apply(download_url, tag):
     except urllib.error.HTTPError as e:
         raise Exception(f"Erro ao baixar executável: HTTP {e.code}\nURL: {download_url}")
 
-    bat_content = (
-        "@echo off\n"
-        "timeout /t 2 /nobreak >nul\n"
-        f'move /y "{new_exe_path}" "{current_exe}"\n'
-        f'start "" "{current_exe}"\n'
-        'del "%~f0"\n'
+    # PowerShell com -EncodedCommand evita problemas com caminhos que contêm
+    # parênteses (ex: "programa (1).exe") — o CMD falha nesse caso mesmo com aspas.
+    ps_script = (
+        f'Start-Sleep -Seconds 2; '
+        f'Move-Item -Force "{new_exe_path}" "{current_exe}"; '
+        f'Start-Process "{current_exe}"'
     )
-    bat_path = os.path.join(os.path.dirname(current_exe), "_update.bat")
-    with open(bat_path, "w", encoding="utf-8") as f:
-        f.write(bat_content)
+    encoded_cmd = base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
 
-    subprocess.Popen(["cmd", "/c", bat_path])
+    subprocess.Popen(
+        [
+            "powershell",
+            "-ExecutionPolicy", "Bypass",
+            "-WindowStyle", "Hidden",
+            "-EncodedCommand", encoded_cmd,
+        ],
+        creationflags=subprocess.DETACHED_PROCESS | subprocess.CREATE_NEW_PROCESS_GROUP,
+    )
     os._exit(0)
