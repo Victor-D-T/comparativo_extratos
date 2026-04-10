@@ -37,6 +37,9 @@ class GenerateCashFlow:
     def __init__(self) -> None:
         self.sophia_folder_path = os.path.join(os.getcwd(),'Sophia')
         self.final_dict = None
+        _empty = pd.DataFrame(columns=["Conta", "Descricao_conta", "Valor"])
+        self.pagas     = _empty.copy()
+        self.recebidas = _empty.copy()
 
     def main(self):
         self.sophias_cash_flow()
