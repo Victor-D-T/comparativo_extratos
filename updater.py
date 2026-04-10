@@ -77,4 +77,4 @@ def download_and_apply(download_url, tag):
         f.write(bat_content)
 
     subprocess.Popen(["cmd", "/c", bat_path])
-    sys.exit(0)
+    os._exit(0)
