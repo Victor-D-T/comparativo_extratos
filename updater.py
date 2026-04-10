@@ -6,6 +6,7 @@ import base64
 import subprocess
 import urllib.request
 import urllib.error
+import urllib.parse
 import certifi
 
 
@@ -55,7 +56,13 @@ def check_for_update(current_version):
 def download_and_apply(download_url, tag):
     """Baixa o novo exe e cria o script de substituição. Encerra o processo."""
     current_exe = sys.executable
-    new_exe_path = current_exe + ".new"
+    current_dir = os.path.dirname(current_exe)
+
+    # Usa o nome canônico do asset (da URL do GitHub) como destino.
+    # Assim o novo exe é instalado sem "(1)" no nome, mesmo que o exe atual tenha.
+    asset_name = os.path.basename(urllib.parse.urlparse(download_url).path)
+    target_exe = os.path.join(current_dir, asset_name)
+    new_exe_path = target_exe + ".new"
 
     ctx = ssl.create_default_context(cafile=certifi.where())
     req = urllib.request.Request(download_url, headers={"User-Agent": "comparativo-extratos"})
@@ -66,13 +73,25 @@ def download_and_apply(download_url, tag):
     except urllib.error.HTTPError as e:
         raise Exception(f"Erro ao baixar executável: HTTP {e.code}\nURL: {download_url}")
 
-    # PowerShell com -EncodedCommand evita problemas com caminhos que contêm
-    # parênteses (ex: "programa (1).exe") — o CMD falha nesse caso mesmo com aspas.
-    ps_script = (
-        f'Start-Sleep -Seconds 2; '
-        f'Move-Item -Force "{new_exe_path}" "{current_exe}"; '
-        f'Start-Process "{current_exe}"'
-    )
+    current_pid = os.getpid()
+    ps_lines = [
+        # Aguarda o processo pai morrer de fato antes de tentar mover o arquivo
+        f'$p = Get-Process -Id {current_pid} -ErrorAction SilentlyContinue',
+        f'if ($p) {{ $p.WaitForExit(15000) }}',
+        # Remove Mark of the Web (bloqueio de arquivo baixado da internet)
+        f'Unblock-File -Path "{new_exe_path}" -ErrorAction SilentlyContinue',
+        # Tenta mover até 5 vezes (Defender pode travar brevemente o arquivo)
+        f'$ok = $false',
+        f'for ($i = 0; $i -lt 5; $i++) {{',
+        f'    try {{',
+        f'        Move-Item -Force "{new_exe_path}" "{target_exe}" -ErrorAction Stop',
+        f'        $ok = $true; break',
+        f'    }} catch {{ Start-Sleep -Seconds 1 }}',
+        f'}}',
+        # SÓ relança o programa se o move funcionou — evita loop com exe antigo
+        f'if ($ok) {{ Start-Process "{target_exe}" }}',
+    ]
+    ps_script = "\n".join(ps_lines)
     encoded_cmd = base64.b64encode(ps_script.encode("utf-16-le")).decode("ascii")
 
     subprocess.Popen(

@@ -36,6 +36,7 @@ class GenerateCashFlow:
 
     def __init__(self) -> None:
         self.sophia_folder_path = os.path.join(os.getcwd(),'Sophia')
+        self.final_dict = None
 
     def main(self):
         self.sophias_cash_flow()
