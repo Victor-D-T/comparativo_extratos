@@ -97,7 +97,7 @@ class SophiasCashflow:
             files.append(complete_file_path)
 
         for file in files:
-            if not file.lower().endswith(('.xls')):
+            if not file.lower().endswith(('.xls', '.xlsx')):
                 continue
 
             else:

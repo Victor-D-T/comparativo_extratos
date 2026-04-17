@@ -29,7 +29,7 @@ class CashFlowComparative:
         self.__compare_sophia_and_extratos()
 
         self._progress(90, "Gerando fluxo de caixa...")
-        self.generate_cashflow.main()
+        self.generate_cashflow.main(self.final_dict)
 
     
     def __compare_sophia_and_extratos(self):
@@ -85,9 +85,86 @@ class CashFlowComparative:
 
         self.__write_to_excel(final_df)
 
+    def __build_resumo(self, final_df):
+        soma_rows = final_df[final_df['date'] == 'soma'].copy()
+        soma_rows = soma_rows.set_index('bank')
+
+        rows = []
+        for bank in soma_rows.index:
+            r = soma_rows.loc[bank]
+            rec_s  = float(r['recebidas_sophia'])
+            rec_e  = float(r['recebidas_extrato'])
+            pag_s  = abs(float(r['pagas_sophia']))
+            pag_e  = abs(float(r['pagas_extrato']))
+            rows.append({
+                'Banco':             bank,
+                'Rec. Sophia':       rec_s,
+                'Rec. Extrato':      rec_e,
+                'Dif. Recebidas':    round(rec_s - rec_e, 2),
+                'Pag. Sophia':       pag_s,
+                'Pag. Extrato':      pag_e,
+                'Dif. Pagas':        round(pag_s - pag_e, 2),
+                'Result. Sophia':    round(rec_s - pag_s, 2),
+                'Result. Extrato':   round(rec_e - pag_e, 2),
+            })
+
+        totals = {
+            'Banco':           'TOTAL',
+            'Rec. Sophia':     sum(r['Rec. Sophia']    for r in rows),
+            'Rec. Extrato':    sum(r['Rec. Extrato']   for r in rows),
+            'Dif. Recebidas':  round(sum(r['Dif. Recebidas'] for r in rows), 2),
+            'Pag. Sophia':     sum(r['Pag. Sophia']    for r in rows),
+            'Pag. Extrato':    sum(r['Pag. Extrato']   for r in rows),
+            'Dif. Pagas':      round(sum(r['Dif. Pagas']     for r in rows), 2),
+            'Result. Sophia':  round(sum(r['Result. Sophia']  for r in rows), 2),
+            'Result. Extrato': round(sum(r['Result. Extrato'] for r in rows), 2),
+        }
+        rows.append(totals)
+        return rows
+
+    def __write_resultados_gerais(self, writer, resumo_rows):
+        workbook  = writer.book
+        worksheet = workbook.add_worksheet("Resultados Gerais")
+        writer.sheets["Resultados Gerais"] = worksheet
+
+        hdr_fmt   = workbook.add_format({'bold': True, 'bg_color': '#B8CCE4', 'border': 1, 'align': 'center'})
+        bank_fmt  = workbook.add_format({'bold': False, 'bg_color': '#EBF1DE', 'border': 1})
+        num_fmt   = workbook.add_format({'bg_color': '#EBF1DE', 'border': 1, 'num_format': '#,##0.00'})
+        diff_fmt  = workbook.add_format({'bg_color': '#EBF1DE', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
+        total_bank_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1})
+        total_num_fmt  = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00'})
+        total_diff_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
+
+        headers = ['Banco', 'Rec. Sophia', 'Rec. Extrato', 'Dif. Recebidas',
+                   'Pag. Sophia', 'Pag. Extrato', 'Dif. Pagas',
+                   'Result. Sophia', 'Result. Extrato']
+
+        for col, h in enumerate(headers):
+            worksheet.write(0, col, h, hdr_fmt)
+
+        diff_cols = {headers.index('Dif. Recebidas'), headers.index('Dif. Pagas'),
+                     headers.index('Result. Sophia'), headers.index('Result. Extrato')}
+
+        for row_idx, row_data in enumerate(resumo_rows, start=1):
+            is_total = row_data['Banco'] == 'TOTAL'
+            for col, h in enumerate(headers):
+                val = row_data[h]
+                if col == 0:
+                    worksheet.write(row_idx, col, val, total_bank_fmt if is_total else bank_fmt)
+                elif col in diff_cols:
+                    worksheet.write(row_idx, col, val, total_diff_fmt if is_total else diff_fmt)
+                else:
+                    worksheet.write(row_idx, col, val, total_num_fmt if is_total else num_fmt)
+
+        col_widths = [24, 14, 14, 16, 14, 14, 12, 16, 16]
+        for col, w in enumerate(col_widths):
+            worksheet.set_column(col, col, w)
+
     def __write_to_excel(self, final_df):
-                    
+        resumo_rows = self.__build_resumo(final_df)
+
         with pd.ExcelWriter(os.path.join(os.getcwd(), 'comparativo_de_caixa.xlsx'), engine = "xlsxwriter" ) as writer:
+            self.__write_resultados_gerais(writer, resumo_rows)
             for bank, group in final_df.groupby('bank'):
                 sheet_name = bank.replace(' ', '_')[:31] 
                 group_without_bank = group.drop('bank', axis=1)

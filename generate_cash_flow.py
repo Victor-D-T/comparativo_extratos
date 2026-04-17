@@ -41,9 +41,9 @@ class GenerateCashFlow:
         self.pagas     = _empty.copy()
         self.recebidas = _empty.copy()
 
-    def main(self):
+    def main(self, final_dict=None):
         self.sophias_cash_flow()
-        self.create_excel()
+        self.create_excel(final_dict)
 
         return self.final_dict
 
@@ -52,17 +52,16 @@ class GenerateCashFlow:
         df = pd.read_excel(file, engine=engine)
         if df.get("CLASSIFIC_COD") is not None:
             df = df[["CLASSIFIC_COD", "CLASSIFIC_DESC", "VALOR_RECEB"]]
-
-            self.pagas = df.groupby(["CLASSIFIC_COD", "CLASSIFIC_DESC"])["VALOR_RECEB"].sum().reset_index()
-            self.pagas = self.pagas.rename(columns={"CLASSIFIC_COD": "Conta", "CLASSIFIC_DESC": "Descricao_conta", "VALOR_RECEB":"Valor"}).reset_index(drop=True)
+            new_pagas = df.groupby(["CLASSIFIC_COD", "CLASSIFIC_DESC"])["VALOR_RECEB"].sum().reset_index()
+            new_pagas = new_pagas.rename(columns={"CLASSIFIC_COD": "Conta", "CLASSIFIC_DESC": "Descricao_conta", "VALOR_RECEB": "Valor"}).reset_index(drop=True)
+            self.pagas = pd.concat([self.pagas, new_pagas], ignore_index=True)
 
         elif df.get("PLANO_CONTAS") is not None:
             df = df[["PLANO_CONTAS", "PGTO_CLASSFIC"]]
-
             df[["Conta", "Descricao_conta"]] = df["PLANO_CONTAS"].str.split(" - ", n=1, expand=True)
-
-            self.recebidas = df.groupby(["Conta", "Descricao_conta"])["PGTO_CLASSFIC"].sum().reset_index()
-            self.recebidas = self.recebidas.rename(columns={"PGTO_CLASSFIC": "Valor"}).reset_index(drop=True)
+            new_recebidas = df.groupby(["Conta", "Descricao_conta"])["PGTO_CLASSFIC"].sum().reset_index()
+            new_recebidas = new_recebidas.rename(columns={"PGTO_CLASSFIC": "Valor"}).reset_index(drop=True)
+            self.recebidas = pd.concat([self.recebidas, new_recebidas], ignore_index=True)
 
     @staticmethod
     def _normalize(code: str) -> str:
@@ -77,7 +76,7 @@ class GenerateCashFlow:
                     best_code, best_len, best_idx = code, len(p), idx
         return best_code
 
-    def create_excel(self):
+    def create_excel(self, final_dict=None):
         analytical = pd.concat([self.pagas, self.recebidas], ignore_index=True).reset_index(drop=True)
 
         # Pre-compute parent for each analytical row
@@ -106,11 +105,14 @@ class GenerateCashFlow:
             worksheet = workbook.add_worksheet("fluxo de caixa")
             writer.sheets["fluxo de caixa"] = worksheet
 
-            synth_fmt     = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2', 'border': 1})
-            synth_num_fmt = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2', 'border': 1, 'num_format': '#,##0.00'})
-            anal_fmt      = workbook.add_format({'border': 1})
-            anal_num_fmt  = workbook.add_format({'border': 1, 'num_format': '#,##0.00'})
-            header_fmt    = workbook.add_format({'bold': True, 'bg_color': '#B8CCE4', 'border': 1})
+            synth_fmt       = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2', 'border': 1})
+            synth_num_fmt   = workbook.add_format({'bold': True, 'bg_color': '#D9E1F2', 'border': 1, 'num_format': '#,##0.00'})
+            anal_fmt        = workbook.add_format({'border': 1})
+            anal_num_fmt    = workbook.add_format({'border': 1, 'num_format': '#,##0.00'})
+            header_fmt      = workbook.add_format({'bold': True, 'bg_color': '#B8CCE4', 'border': 1})
+            conf_header_fmt = workbook.add_format({'bold': True, 'bg_color': '#F4B942', 'border': 1})
+            conf_num_fmt    = workbook.add_format({'bold': True, 'bg_color': '#FFF2CC', 'border': 1, 'num_format': '#,##0.00'})
+            conf_diff_fmt   = workbook.add_format({'bold': True, 'bg_color': '#FFF2CC', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#FF0000'})
 
             # Header row
             for col, name in enumerate(["Conta", "Descricao_conta", "Valor"]):
@@ -119,13 +121,42 @@ class GenerateCashFlow:
             worksheet.set_column(0, 0, 18)
             worksheet.set_column(1, 1, 45)
             worksheet.set_column(2, 2, 16)
+            worksheet.set_column(3, 3, 16)
+            worksheet.set_column(4, 4, 16)
 
             for row_idx, (is_synth, conta, desc, valor) in enumerate(output_rows, start=1):
                 text_fmt = synth_fmt if is_synth else anal_fmt
                 num_fmt  = synth_num_fmt if is_synth else anal_num_fmt
-                worksheet.write(row_idx, 0, conta,  text_fmt)
-                worksheet.write(row_idx, 1, desc,   text_fmt)
-                worksheet.write(row_idx, 2, valor,  num_fmt)
+                worksheet.write(row_idx, 0, conta, text_fmt)
+                worksheet.write(row_idx, 1, desc,  text_fmt)
+                worksheet.write(row_idx, 2, valor, num_fmt)
+
+            if final_dict:
+                total_rec_extrato = sum(
+                    v for bd in final_dict.values()
+                    for v in bd['recebidas']['extrato'].values()
+                )
+                total_pag_extrato = abs(sum(
+                    v for bd in final_dict.values()
+                    for v in bd['pagas']['extrato'].values()
+                ))
+                sophia_rec = synth_totals.get("100.000", 0)
+                sophia_pag = synth_totals.get("200.000", 0)
+
+                next_row = len(output_rows) + 2
+                for col, h in enumerate(["Conta", "Descrição", "Sophia", "Extrato", "Diferença"]):
+                    worksheet.write(next_row, col, h, conf_header_fmt)
+
+                for i, (code, label, sophia_val, extrato_val) in enumerate([
+                    ("100.000", "RECEITAS", sophia_rec, total_rec_extrato),
+                    ("200.000", "DESPESAS", sophia_pag, total_pag_extrato),
+                ]):
+                    r = next_row + 1 + i
+                    worksheet.write(r, 0, code,                               conf_num_fmt)
+                    worksheet.write(r, 1, label,                              conf_num_fmt)
+                    worksheet.write(r, 2, sophia_val,                         conf_num_fmt)
+                    worksheet.write(r, 3, extrato_val,                        conf_num_fmt)
+                    worksheet.write(r, 4, round(sophia_val - extrato_val, 2), conf_diff_fmt)
 
     def sophias_cash_flow(self):
         files = []
@@ -135,11 +166,13 @@ class GenerateCashFlow:
             files.append(complete_file_path)
 
         for file in files:
-            if not file.lower().endswith(('.xls')):
+            if not file.lower().endswith(('.xls', '.xlsx')):
                 continue
+            self.extract_sophias_transactions_data(file)
 
-            else:
-                self.final_dict = self.extract_sophias_transactions_data(file)
-
+        if not self.pagas.empty:
+            self.pagas = self.pagas.groupby(["Conta", "Descricao_conta"])["Valor"].sum().reset_index()
+        if not self.recebidas.empty:
+            self.recebidas = self.recebidas.groupby(["Conta", "Descricao_conta"])["Valor"].sum().reset_index()
 
         return self.final_dict

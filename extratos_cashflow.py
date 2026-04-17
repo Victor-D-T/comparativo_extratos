@@ -9,8 +9,8 @@ class ExtratosCashFlow:
                         "caixa": "caixa",
                         "cef 20-3":"caixa",
                         "cora iv": "cora unidade 3",
-                        "itaú iv": "itau unidade 3",
-                        "itaú rd": "itau unidade 1 e 2",
+                        "itau iv": "itau unidade 3",
+                        "itau rd": "itau unidade 1 e 2",
                         "sicredi rd": "sicredi unidade 1 e 2",
                         "sicredi iv": "sicredi unidade 3"}
                 
@@ -18,7 +18,7 @@ class ExtratosCashFlow:
         self.files = []
 
         for f in os.listdir(self.folder_path):
-            if f.startswith('~$'):
+            if f.startswith('~$') or f.startswith('.~'):
                 continue
             complete_file_path = os.path.join(self.folder_path, f)
             self.files.append(complete_file_path)
