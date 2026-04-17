@@ -160,11 +160,90 @@ class CashFlowComparative:
         for col, w in enumerate(col_widths):
             worksheet.set_column(col, col, w)
 
+    def __build_consolidado_diario(self, final_df):
+        daily = final_df[final_df['date'] != 'soma'].copy()
+        for col in ['recebidas_sophia', 'recebidas_extrato', 'pagas_sophia', 'pagas_extrato']:
+            daily[col] = pd.to_numeric(daily[col], errors='coerce').fillna(0)
+
+        grouped = daily.groupby('date')[
+            ['recebidas_sophia', 'recebidas_extrato', 'pagas_sophia', 'pagas_extrato']
+        ].sum().reset_index().sort_values('date')
+
+        rows = []
+        for _, r in grouped.iterrows():
+            rec_s = float(r['recebidas_sophia'])
+            rec_e = float(r['recebidas_extrato'])
+            pag_s = abs(float(r['pagas_sophia']))
+            pag_e = abs(float(r['pagas_extrato']))
+            rows.append({
+                'Data':           r['date'],
+                'Rec. Sophia':    rec_s,
+                'Rec. Extrato':   rec_e,
+                'Dif. Rec.':      round(rec_s - rec_e, 2),
+                'Pag. Sophia':    pag_s,
+                'Pag. Extrato':   pag_e,
+                'Dif. Pag.':      round(pag_s - pag_e, 2),
+                'Result. Sophia': round(rec_s - pag_s, 2),
+                'Result. Extrato':round(rec_e - pag_e, 2),
+            })
+
+        rows.append({
+            'Data':            'TOTAL',
+            'Rec. Sophia':     round(sum(r['Rec. Sophia']     for r in rows), 2),
+            'Rec. Extrato':    round(sum(r['Rec. Extrato']    for r in rows), 2),
+            'Dif. Rec.':       round(sum(r['Dif. Rec.']       for r in rows), 2),
+            'Pag. Sophia':     round(sum(r['Pag. Sophia']     for r in rows), 2),
+            'Pag. Extrato':    round(sum(r['Pag. Extrato']    for r in rows), 2),
+            'Dif. Pag.':       round(sum(r['Dif. Pag.']       for r in rows), 2),
+            'Result. Sophia':  round(sum(r['Result. Sophia']  for r in rows), 2),
+            'Result. Extrato': round(sum(r['Result. Extrato'] for r in rows), 2),
+        })
+        return rows
+
+    def __write_consolidado_diario(self, writer, rows):
+        workbook  = writer.book
+        worksheet = workbook.add_worksheet("Consolidado Diário")
+        writer.sheets["Consolidado Diário"] = worksheet
+
+        hdr_fmt    = workbook.add_format({'bold': True, 'bg_color': '#B8CCE4', 'border': 1, 'align': 'center'})
+        date_fmt   = workbook.add_format({'border': 1})
+        num_fmt    = workbook.add_format({'border': 1, 'num_format': '#,##0.00'})
+        diff_fmt   = workbook.add_format({'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
+        total_date_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1})
+        total_num_fmt  = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00'})
+        total_diff_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
+
+        headers = ['Data', 'Rec. Sophia', 'Rec. Extrato', 'Dif. Rec.',
+                   'Pag. Sophia', 'Pag. Extrato', 'Dif. Pag.',
+                   'Result. Sophia', 'Result. Extrato']
+        diff_cols = {headers.index('Dif. Rec.'), headers.index('Dif. Pag.'),
+                     headers.index('Result. Sophia'), headers.index('Result. Extrato')}
+
+        for col, h in enumerate(headers):
+            worksheet.write(0, col, h, hdr_fmt)
+
+        for row_idx, row_data in enumerate(rows, start=1):
+            is_total = row_data['Data'] == 'TOTAL'
+            for col, h in enumerate(headers):
+                val = row_data[h]
+                if col == 0:
+                    worksheet.write(row_idx, col, val, total_date_fmt if is_total else date_fmt)
+                elif col in diff_cols:
+                    worksheet.write(row_idx, col, val, total_diff_fmt if is_total else diff_fmt)
+                else:
+                    worksheet.write(row_idx, col, val, total_num_fmt if is_total else num_fmt)
+
+        col_widths = [14, 14, 14, 12, 14, 14, 12, 16, 16]
+        for col, w in enumerate(col_widths):
+            worksheet.set_column(col, col, w)
+
     def __write_to_excel(self, final_df):
-        resumo_rows = self.__build_resumo(final_df)
+        resumo_rows     = self.__build_resumo(final_df)
+        consolidado_rows = self.__build_consolidado_diario(final_df)
 
         with pd.ExcelWriter(os.path.join(os.getcwd(), 'comparativo_de_caixa.xlsx'), engine = "xlsxwriter" ) as writer:
             self.__write_resultados_gerais(writer, resumo_rows)
+            self.__write_consolidado_diario(writer, consolidado_rows)
             for bank, group in final_df.groupby('bank'):
                 sheet_name = bank.replace(' ', '_')[:31] 
                 group_without_bank = group.drop('bank', axis=1)
