@@ -97,27 +97,27 @@ class CashFlowComparative:
             pag_s  = abs(float(r['pagas_sophia']))
             pag_e  = abs(float(r['pagas_extrato']))
             rows.append({
-                'Banco':             bank,
-                'Rec. Sophia':       rec_s,
-                'Rec. Extrato':      rec_e,
-                'Dif. Recebidas':    round(rec_s - rec_e, 2),
-                'Pag. Sophia':       pag_s,
-                'Pag. Extrato':      pag_e,
-                'Dif. Pagas':        round(pag_s - pag_e, 2),
-                'Result. Sophia':    round(rec_s - pag_s, 2),
-                'Result. Extrato':   round(rec_e - pag_e, 2),
+                'Banco':                bank,
+                'Recebidas Sophia':     rec_s,
+                'Recebidas Extrato':    rec_e,
+                'Diferença Recebidas':  round(rec_s - rec_e, 2),
+                'Pagas Sophia':         pag_s,
+                'Pagas Extrato':        pag_e,
+                'Diferença Pagas':      round(pag_s - pag_e, 2),
+                'Resultado Sophia':     round(rec_s - pag_s, 2),
+                'Resultado Extrato':    round(rec_e - pag_e, 2),
             })
 
         totals = {
-            'Banco':           'TOTAL',
-            'Rec. Sophia':     sum(r['Rec. Sophia']    for r in rows),
-            'Rec. Extrato':    sum(r['Rec. Extrato']   for r in rows),
-            'Dif. Recebidas':  round(sum(r['Dif. Recebidas'] for r in rows), 2),
-            'Pag. Sophia':     sum(r['Pag. Sophia']    for r in rows),
-            'Pag. Extrato':    sum(r['Pag. Extrato']   for r in rows),
-            'Dif. Pagas':      round(sum(r['Dif. Pagas']     for r in rows), 2),
-            'Result. Sophia':  round(sum(r['Result. Sophia']  for r in rows), 2),
-            'Result. Extrato': round(sum(r['Result. Extrato'] for r in rows), 2),
+            'Banco':               'TOTAL',
+            'Recebidas Sophia':    sum(r['Recebidas Sophia']    for r in rows),
+            'Recebidas Extrato':   sum(r['Recebidas Extrato']   for r in rows),
+            'Diferença Recebidas': round(sum(r['Diferença Recebidas'] for r in rows), 2),
+            'Pagas Sophia':        sum(r['Pagas Sophia']        for r in rows),
+            'Pagas Extrato':       sum(r['Pagas Extrato']       for r in rows),
+            'Diferença Pagas':     round(sum(r['Diferença Pagas']     for r in rows), 2),
+            'Resultado Sophia':    round(sum(r['Resultado Sophia']    for r in rows), 2),
+            'Resultado Extrato':   round(sum(r['Resultado Extrato']   for r in rows), 2),
         }
         rows.append(totals)
         return rows
@@ -135,15 +135,15 @@ class CashFlowComparative:
         total_num_fmt  = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00'})
         total_diff_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
 
-        headers = ['Banco', 'Rec. Sophia', 'Rec. Extrato', 'Dif. Recebidas',
-                   'Pag. Sophia', 'Pag. Extrato', 'Dif. Pagas',
-                   'Result. Sophia', 'Result. Extrato']
+        headers = ['Banco', 'Recebidas Sophia', 'Recebidas Extrato', 'Diferença Recebidas',
+                   'Pagas Sophia', 'Pagas Extrato', 'Diferença Pagas',
+                   'Resultado Sophia', 'Resultado Extrato']
 
         for col, h in enumerate(headers):
             worksheet.write(0, col, h, hdr_fmt)
 
-        diff_cols = {headers.index('Dif. Recebidas'), headers.index('Dif. Pagas'),
-                     headers.index('Result. Sophia'), headers.index('Result. Extrato')}
+        diff_cols = {headers.index('Diferença Recebidas'), headers.index('Diferença Pagas'),
+                     headers.index('Resultado Sophia'), headers.index('Resultado Extrato')}
 
         for row_idx, row_data in enumerate(resumo_rows, start=1):
             is_total = row_data['Banco'] == 'TOTAL'
@@ -176,27 +176,27 @@ class CashFlowComparative:
             pag_s = abs(float(r['pagas_sophia']))
             pag_e = abs(float(r['pagas_extrato']))
             rows.append({
-                'Data':           r['date'],
-                'Rec. Sophia':    rec_s,
-                'Rec. Extrato':   rec_e,
-                'Dif. Rec.':      round(rec_s - rec_e, 2),
-                'Pag. Sophia':    pag_s,
-                'Pag. Extrato':   pag_e,
-                'Dif. Pag.':      round(pag_s - pag_e, 2),
-                'Result. Sophia': round(rec_s - pag_s, 2),
-                'Result. Extrato':round(rec_e - pag_e, 2),
+                'Data':                r['date'],
+                'Recebidas Sophia':    rec_s,
+                'Recebidas Extrato':   rec_e,
+                'Diferença Recebidas': round(rec_s - rec_e, 2),
+                'Pagas Sophia':        pag_s,
+                'Pagas Extrato':       pag_e,
+                'Diferença Pagas':     round(pag_s - pag_e, 2),
+                'Resultado Sophia':    round(rec_s - pag_s, 2),
+                'Resultado Extrato':   round(rec_e - pag_e, 2),
             })
 
         rows.append({
-            'Data':            'TOTAL',
-            'Rec. Sophia':     round(sum(r['Rec. Sophia']     for r in rows), 2),
-            'Rec. Extrato':    round(sum(r['Rec. Extrato']    for r in rows), 2),
-            'Dif. Rec.':       round(sum(r['Dif. Rec.']       for r in rows), 2),
-            'Pag. Sophia':     round(sum(r['Pag. Sophia']     for r in rows), 2),
-            'Pag. Extrato':    round(sum(r['Pag. Extrato']    for r in rows), 2),
-            'Dif. Pag.':       round(sum(r['Dif. Pag.']       for r in rows), 2),
-            'Result. Sophia':  round(sum(r['Result. Sophia']  for r in rows), 2),
-            'Result. Extrato': round(sum(r['Result. Extrato'] for r in rows), 2),
+            'Data':                'TOTAL',
+            'Recebidas Sophia':    round(sum(r['Recebidas Sophia']    for r in rows), 2),
+            'Recebidas Extrato':   round(sum(r['Recebidas Extrato']   for r in rows), 2),
+            'Diferença Recebidas': round(sum(r['Diferença Recebidas'] for r in rows), 2),
+            'Pagas Sophia':        round(sum(r['Pagas Sophia']        for r in rows), 2),
+            'Pagas Extrato':       round(sum(r['Pagas Extrato']       for r in rows), 2),
+            'Diferença Pagas':     round(sum(r['Diferença Pagas']     for r in rows), 2),
+            'Resultado Sophia':    round(sum(r['Resultado Sophia']    for r in rows), 2),
+            'Resultado Extrato':   round(sum(r['Resultado Extrato']   for r in rows), 2),
         })
         return rows
 
@@ -213,11 +213,11 @@ class CashFlowComparative:
         total_num_fmt  = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00'})
         total_diff_fmt = workbook.add_format({'bold': True, 'bg_color': '#DCE6F1', 'border': 1, 'num_format': '#,##0.00', 'font_color': '#C00000'})
 
-        headers = ['Data', 'Rec. Sophia', 'Rec. Extrato', 'Dif. Rec.',
-                   'Pag. Sophia', 'Pag. Extrato', 'Dif. Pag.',
-                   'Result. Sophia', 'Result. Extrato']
-        diff_cols = {headers.index('Dif. Rec.'), headers.index('Dif. Pag.'),
-                     headers.index('Result. Sophia'), headers.index('Result. Extrato')}
+        headers = ['Data', 'Recebidas Sophia', 'Recebidas Extrato', 'Diferença Recebidas',
+                   'Pagas Sophia', 'Pagas Extrato', 'Diferença Pagas',
+                   'Resultado Sophia', 'Resultado Extrato']
+        diff_cols = {headers.index('Diferença Recebidas'), headers.index('Diferença Pagas'),
+                     headers.index('Resultado Sophia'), headers.index('Resultado Extrato')}
 
         for col, h in enumerate(headers):
             worksheet.write(0, col, h, hdr_fmt)
