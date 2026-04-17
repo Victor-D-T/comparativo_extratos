@@ -75,20 +75,30 @@ def download_and_apply(download_url, tag):
 
     current_pid = os.getpid()
     ps_lines = [
-        # Aguarda o processo pai morrer de fato antes de tentar mover o arquivo
+        # Aguarda o processo pai morrer
         f'$p = Get-Process -Id {current_pid} -ErrorAction SilentlyContinue',
         f'if ($p) {{ $p.WaitForExit(15000) }}',
-        # Remove Mark of the Web (bloqueio de arquivo baixado da internet)
+        f'Start-Sleep -Seconds 2',
+        # Remove Mark of the Web para não disparar SmartScreen
         f'Unblock-File -Path "{new_exe_path}" -ErrorAction SilentlyContinue',
-        # Tenta mover até 5 vezes (Defender pode travar brevemente o arquivo)
+        # Espera o Defender terminar de escanear (arquivo desbloqueado = sem locks)
+        f'$deadline = (Get-Date).AddSeconds(60)',
+        f'while ((Get-Date) -lt $deadline) {{',
+        f'    try {{',
+        f'        $s = [System.IO.File]::Open("{new_exe_path}", [System.IO.FileMode]::Open, [System.IO.FileAccess]::ReadWrite, [System.IO.FileShare]::None)',
+        f'        $s.Close()',
+        f'        break',
+        f'    }} catch {{ Start-Sleep -Seconds 1 }}',
+        f'}}',
+        # Move com até 10 tentativas
         f'$ok = $false',
-        f'for ($i = 0; $i -lt 5; $i++) {{',
+        f'for ($i = 0; $i -lt 10; $i++) {{',
         f'    try {{',
         f'        Move-Item -Force "{new_exe_path}" "{target_exe}" -ErrorAction Stop',
         f'        $ok = $true; break',
-        f'    }} catch {{ Start-Sleep -Seconds 1 }}',
+        f'    }} catch {{ Start-Sleep -Seconds 2 }}',
         f'}}',
-        # SÓ relança o programa se o move funcionou — evita loop com exe antigo
+        # Lança somente se o move funcionou
         f'if ($ok) {{ Start-Process "{target_exe}" }}',
     ]
     ps_script = "\n".join(ps_lines)
