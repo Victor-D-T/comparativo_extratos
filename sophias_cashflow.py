@@ -44,7 +44,7 @@ class SophiasCashflow:
                 new_value = self.banks_dict[value.lower()]
                 df.at[idx, "CONTA"] = new_value
 
-            self.pagas = df.groupby(["CONTA", "DATA_EFETIVA"])["VALOR_RECEB"].sum().reset_index()
+            self.pagas = df.groupby(["CONTA", "DATA_EFETIVA"])["VALOR_CLASS"].sum().reset_index()
             for _, row in self.pagas.iterrows():
                 if self.final_dict.get(row["CONTA"]) is None:
                     self.final_dict[row["CONTA"]] = {
@@ -58,7 +58,7 @@ class SophiasCashflow:
                         }
                     }
 
-                self.final_dict[row["CONTA"]]["pagas"]["sophia"][str(row["DATA_EFETIVA"])] = -row["VALOR_RECEB"]
+                self.final_dict[row["CONTA"]]["pagas"]["sophia"][str(row["DATA_EFETIVA"])] = -row["VALOR_CLASS"]
         elif df.get("RECEBTO") is not None:
             df["RECEBTO"] = pd.to_datetime(df["RECEBTO"])
             df["RECEBTO"] = df["RECEBTO"].dt.strftime('%Y-%m-%d')

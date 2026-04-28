@@ -51,9 +51,9 @@ class GenerateCashFlow:
         engine = 'openpyxl' if file.lower().endswith('.xlsx') else 'xlrd'
         df = pd.read_excel(file, engine=engine)
         if df.get("CLASSIFIC_COD") is not None:
-            df = df[["CLASSIFIC_COD", "CLASSIFIC_DESC", "VALOR_RECEB"]]
-            new_pagas = df.groupby(["CLASSIFIC_COD", "CLASSIFIC_DESC"])["VALOR_RECEB"].sum().reset_index()
-            new_pagas = new_pagas.rename(columns={"CLASSIFIC_COD": "Conta", "CLASSIFIC_DESC": "Descricao_conta", "VALOR_RECEB": "Valor"}).reset_index(drop=True)
+            df = df[["CLASSIFIC_COD", "CLASSIFIC_DESC", "VALOR_CLASS"]]
+            new_pagas = df.groupby(["CLASSIFIC_COD", "CLASSIFIC_DESC"])["VALOR_CLASS"].sum().reset_index()
+            new_pagas = new_pagas.rename(columns={"CLASSIFIC_COD": "Conta", "CLASSIFIC_DESC": "Descricao_conta", "VALOR_CLASS": "Valor"}).reset_index(drop=True)
             self.pagas = pd.concat([self.pagas, new_pagas], ignore_index=True)
 
         elif df.get("PLANO_CONTAS") is not None:
